@@ -165,6 +165,7 @@ class AtomicSimpleCPU : public BaseSimpleCPU
     RequestPtr ifetch_req;
     RequestPtr data_read_req;
     RequestPtr data_write_req;
+    RequestPtr data_active_req;
     RequestPtr data_amo_req;
 
     bool dcache_access;
@@ -242,6 +243,9 @@ class AtomicSimpleCPU : public BaseSimpleCPU
                    Addr addr, Request::Flags flags, uint64_t *res,
                    const std::vector<bool> &byte_enable=std::vector<bool>())
         override;
+    
+    Fault ActiveMem(uint8_t *data, uint16_t funcop, Addr addr,
+                              Request::Flags flags) override;
 
     Fault amoMem(Addr addr, uint8_t *data, unsigned size,
                  Request::Flags flags, AtomicOpFunctorPtr amo_op) override;

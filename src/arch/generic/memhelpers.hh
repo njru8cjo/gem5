@@ -223,6 +223,57 @@ writeMemAtomicLE(XC *xc, trace::InstRecord *traceData, const MemT &mem,
             xc, traceData, mem, addr, flags, res);
 }
 
+template <class XC>
+Fault
+ActiveMemAtomic(XC *xc, uint8_t *mem, Addr addr,
+               uint16_t funcop, Request::Flags flags)
+{
+    return xc->ActiveMem(mem, funcop, addr, flags);
+}
+
+//for lim sw active op
+//funcop is 0 equal sw_active_none
+//funcop is 2 equal sw_active_or
+//funcop is 3 equal sw_active_and
+//funcop is 4 equal sw_active_xor
+//funcop is 6 equal sw_active_min
+//funcop is 7 equal sw_active_max
+template <ByteOrder Order, class XC, class MemT>
+Fault
+ActiveMemAtomic(XC *xc, trace::InstRecord *traceData, const MemT &active_ragne_size,
+               Addr addr, Request::Flags flags, uint16_t funcop)
+{
+    if (traceData) {
+        traceData->setData(active_ragne_size);
+    }
+    MemT host_mem = htog(active_ragne_size, Order);
+    //static const std::vector<bool> byte_enable(funcop, true);
+    //Fault fault = ActiveMemAtomic(xc, (uint8_t*)&host_mem,
+    //                             addr, funcop, flags, byte_enable);
+
+    Fault fault = ActiveMemAtomic(xc, (uint8_t*)&host_mem,
+                                 addr, funcop, flags);
+
+    return fault;
+}
+
+//for lim sw active op
+//funcop is 0 equal sw_active_none
+//funcop is 2 equal sw_active_or
+//funcop is 3 equal sw_active_and
+//funcop is 4 equal sw_active_xor
+//funcop is 6 equal sw_active_min
+//funcop is 7 equal sw_active_max
+//mem data is active_ragne_size
+template <class XC, class MemT>
+Fault
+ActiveMemAtomicLE(XC *xc, trace::InstRecord *traceData, const MemT &active_ragne_size,
+                 Addr addr, Request::Flags flags, size_t funcop)
+{
+    return ActiveMemAtomic<ByteOrder::little>(
+            xc, traceData, active_ragne_size, addr, flags, funcop);
+}
+
 template <class XC, class MemT>
 Fault
 writeMemAtomicBE(XC *xc, trace::InstRecord *traceData, const MemT &mem,

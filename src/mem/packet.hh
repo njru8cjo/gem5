@@ -417,6 +417,10 @@ class Packet : public Printable
      * This is used for correctness/debugging only.
      */
     uint64_t htmTransactionUid;
+    
+    uint16_t _lim_funcop;
+
+    uint8_t _lim_activate_size;
 
   public:
 
@@ -879,7 +883,8 @@ class Packet : public Printable
            htmReturnReason(HtmCacheFailure::NO_FAIL),
            htmTransactionUid(0),
            headerDelay(0), snoopDelay(0),
-           payloadDelay(0), senderState(NULL)
+           payloadDelay(0), senderState(NULL),
+           _lim_funcop(0)
     {
         flags.clear();
         if (req->hasPaddr()) {
@@ -920,7 +925,8 @@ class Packet : public Printable
            htmReturnReason(HtmCacheFailure::NO_FAIL),
            htmTransactionUid(0),
            headerDelay(0),
-           snoopDelay(0), payloadDelay(0), senderState(NULL)
+           snoopDelay(0), payloadDelay(0), senderState(NULL),
+           _lim_funcop(0)
     {
         flags.clear();
         if (req->hasPaddr()) {
@@ -950,7 +956,8 @@ class Packet : public Printable
            headerDelay(pkt->headerDelay),
            snoopDelay(0),
            payloadDelay(pkt->payloadDelay),
-           senderState(pkt->senderState)
+           senderState(pkt->senderState),
+           _lim_funcop(0)
     {
         if (!clear_flags)
             flags.set(pkt->flags & COPY_FLAGS);
@@ -1098,6 +1105,32 @@ class Packet : public Printable
 
         this->size = size;
         flags.set(VALID_SIZE);
+    }
+
+    void
+    setLimFuncop(uint16_t lim_funcop)
+    {
+        _lim_funcop = lim_funcop;
+    }
+
+
+    uint16_t
+    getLimFuncop() const
+    {
+        return _lim_funcop;
+    }
+
+    void
+    setLimActivateSize(uint8_t lim_activate_size)
+    {
+        _lim_activate_size = lim_activate_size;
+    }
+
+    uint8_t
+    getLimActivateSize() const
+    {
+        // Activate size 0 = Activate size 1
+        return _lim_activate_size ? _lim_activate_size : 1;
     }
 
     /**
@@ -1306,22 +1339,7 @@ class Packet : public Printable
      * @param p Pointer to which data will be copied.
      */
     void
-    writeData(uint8_t *p) const
-    {
-        if (!isMaskedWrite()) {
-            std::memcpy(p, getConstPtr<uint8_t>(), getSize());
-        } else {
-            assert(req->getByteEnable().size() == getSize());
-            // Write only the enabled bytes
-            const uint8_t *base = getConstPtr<uint8_t>();
-            for (unsigned int i = 0; i < getSize(); i++) {
-                if (req->getByteEnable()[i]) {
-                    p[i] = *(base + i);
-                }
-                // Disabled bytes stay untouched
-            }
-        }
-    }
+    writeData(uint8_t *p) const;
 
     /**
      * Copy data from the packet to the provided block pointer, which

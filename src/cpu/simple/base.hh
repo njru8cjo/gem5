@@ -166,6 +166,13 @@ class BaseSimpleCPU : public BaseCPU
     {
         panic("writeMem() is not implemented\n");
     }
+    
+    virtual Fault
+    ActiveMem(uint8_t *data, uint16_t funcop, Addr addr,
+                              Request::Flags flags)
+    {
+        panic("ActiveMem() is not implemented\n");
+    }
 
     virtual Fault
     amoMem(Addr addr, uint8_t* data, unsigned size, Request::Flags flags,

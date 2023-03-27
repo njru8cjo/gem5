@@ -429,6 +429,36 @@ decode QUADRANT default Unknown::unknown() {
                 }}, inst_flags=FloatMemReadOp);
             }
         }
+        
+        0x02: decode FUNCT3 {
+            format SwActive {
+                0x0: sw_active_none({{
+                    Mem_ub = Rd_ub;
+                    funcop = 0x00;
+                }});
+                0x2: sw_active_or({{
+                    Mem_ub = Rd_ub;
+                    funcop = 0x01;
+                }});
+                0x3: sw_active_and({{
+                    Mem_ub = Rd_ub;
+                    funcop = 0x02;
+                }});
+                0x4: sw_active_xor({{
+                    Mem_ub = Rd_ub;
+                    funcop = 0x04;
+                }});
+                0x6: sw_active_min({{
+                    Mem_ub = Rd_ub;
+                    funcop = 0x08;
+                }});
+                0x7: sw_active_max({{
+                    Mem_ub = Rd_ub;
+                    funcop = 0x10;
+                }});
+            }
+        }
+
 
         0x03: decode FUNCT3 {
             format FenceOp {

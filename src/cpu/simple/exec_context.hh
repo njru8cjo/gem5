@@ -412,6 +412,14 @@ class SimpleExecContext : public ExecContext
     }
 
     Fault
+    ActiveMem(uint8_t *data, uint16_t funcop, Addr addr,
+                    Request::Flags flags)
+        override
+    {
+        return cpu->ActiveMem(data, funcop, addr, flags);
+    }
+
+    Fault
     initiateMemRead(Addr addr, unsigned int size,
                     Request::Flags flags,
                     const std::vector<bool>& byte_enable)

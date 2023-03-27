@@ -61,6 +61,76 @@ namespace memory
 {
 
 /**
+ * @brief For Lim Memory
+ *
+ */
+ class LimConfig
+ {
+    public:
+    typedef uint16_t LiMType;
+    enum : LiMType
+    {
+        NONE  = 0x00,
+        OR    = 0x01,
+        AND   = 0x02,
+        XOR   = 0x04,
+        MIN   = 0x08,
+        MAX   = 0x10
+    };
+    private:
+
+    // specific memory location to config sw active op
+    const Addr cnfAddress = 0x1fffc;
+
+    LiMType _funcop;
+
+    uint8_t _activate_size;
+
+    public:
+
+    void setLiM(uint16_t funcop, uint8_t activate_size)
+    {
+        setFuncop(funcop);
+        setActivateSize(activate_size);
+    }
+
+    void setFuncop(uint16_t funcop)
+    {
+        _funcop = funcop;
+        // DPRINTF(MemoryAccess, "setLimLogic %x:\n", limFlag);
+    }
+
+    LiMType getFuncop()
+    {
+        return _funcop;
+    }
+
+    void setActivateSize(uint8_t activate_size)
+    {
+        this->_activate_size = activate_size;
+    }
+
+    uint8_t getActivateSize()
+    {
+        return _activate_size;
+    }
+
+    void setPacket(PacketPtr pkt)
+    {
+        pkt->setLimFuncop(_funcop);
+        pkt->setLimActivateSize(_activate_size);
+    }
+
+    Addr getCnfAddress() { return cnfAddress; }
+
+    LimConfig() : _funcop(0), _activate_size(0){}
+
+    // LimConfig(const PacketPtr &pkt) : _funcop(pkt->getLimFuncop()),
+    //                                     _activate_size(*(pkt->getConstPtr<uint8_t>()))
+    // {}
+ };
+
+/**
  * Locked address class that represents a physical address and a
  * context id.
  */
@@ -111,6 +181,9 @@ class AbstractMemory : public ClockedObject
 {
   protected:
 
+    //LimConfig
+    LimConfig limconfig;
+    
     // Address range of this memory
     AddrRange range;
 

@@ -532,4 +532,84 @@ Packet::getHtmTransactionUid() const
     return htmTransactionUid;
 }
 
+void
+Packet::writeData(uint8_t *p) const
+{
+    if(getLimFuncop() != 0x00 && req->getByteEnable().size() == 4)
+    {
+        //size == 4 check for sw
+        uint activate_size = getLimActivateSize();
+        uint opfunc = getLimFuncop();
+        // std::memcpy(p, getConstPtr<uint8_t>(), activate_size * getSize());
+        if(opfunc == 0x08) //min
+        {
+            // int *p_data = (int *)(getConstPtr<uint8_t>());
+            // int min = *( ((int *)(0x20018)));
+            // // for(int i = 0; i < activate_size; i++)
+            // // {
+            // //     if(min > *( ((int *)*(p_data)) + i ))
+            // //         min > *( ((int *)*(p_data)) + i );  
+            // // }
+
+            // p[0] = (unsigned)(min) >> 0;
+            // p[1] = (unsigned)(min) >> 8;
+            // p[2] = (unsigned)(min) >> 16;
+            // p[3] = (unsigned)(min) >> 24;
+        }
+        else if(opfunc == 0x10) //max
+        {
+            // int *p_data = (int *)(getConstPtr<uint8_t>());
+            // int max = *( ((int *)*(p_data)) );
+            // // for(int i = 0; i < activate_size; i++)
+            // // {
+            // //     if(max < *( ((int *)*(p_data)) + i ))
+            // //         max = *( ((int *)*(p_data)) + i );             
+            // // }
+            // p[0] = (unsigned)(max) >> 0;
+            // p[1] = (unsigned)(max) >> 8;
+            // p[2] = (unsigned)(max) >> 16;
+            // p[3] = (unsigned)(max) >> 24;
+        }
+        else
+        {
+            const int *lim_mask = getConstPtr<int>();
+            for(int i = 0; i < activate_size; i ++)
+            {
+                switch(opfunc)
+                {
+                    // or
+                    case 0x01:
+                        *((int *)p + i) = *((int *)p + i) | *(lim_mask);
+                        break;
+                    // and
+                    case 0x02:
+                        *((int *)p + i) = *((int *)p + i) & *(lim_mask);
+                        break;
+                    // xor
+                    case 0x04:
+                        *((int *)p + i) =*((int *)p + i) ^ *(lim_mask);
+                        break;
+                    default:
+                        assert(getLimFuncop() == 0);
+                }
+            }
+        }
+
+    }
+    else if (!isMaskedWrite()) {
+        std::memcpy(p, getConstPtr<uint8_t>(), getSize());
+    }
+    else {
+        assert(req->getByteEnable().size() == getSize());
+        // Write only the enabled bytes
+        const uint8_t *base = getConstPtr<uint8_t>();
+        for (unsigned int i = 0; i < getSize(); i++) {
+            if (req->getByteEnable()[i]) {
+                p[i] = *(base + i);
+            }
+            // Disabled bytes stay untouched
+        }
+    }
+}
+
 } // namespace gem5

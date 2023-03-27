@@ -47,6 +47,7 @@
 #include "cpu/thread_context.hh"
 #include "debug/LLSC.hh"
 #include "debug/MemoryAccess.hh"
+#include "debug/LiMConfig.hh"
 #include "mem/packet_access.hh"
 #include "sim/system.hh"
 
@@ -378,6 +379,27 @@ tracePacket(System *sys, const char *label, PacketPtr pkt)
 void
 AbstractMemory::access(PacketPtr pkt)
 {
+    if(pkt->getAddr() == limconfig.getCnfAddress())
+    {
+        DPRINTF(LiMConfig, "LIM SwActive, funcop : %d, size : %d\n",
+            pkt->getLimFuncop(),
+            *(pkt->getConstPtr<uint8_t>()));
+        // if(pkt->cmd == MemCmd::SwapReq)
+        // {
+        //     DPRINTF(MemoryAccess, "active MemCmd::SwapReq\n");
+        // }
+        // else
+        // {
+        //     DPRINTF(MemoryAccess, "active MemCmd::WriteReq ??\n");
+        // }
+        limconfig.setLiM(pkt->getLimFuncop(), *(pkt->getConstPtr<uint8_t>()));
+
+        if (pkt->needsResponse()) {
+            pkt->makeResponse();
+        }
+        return;
+    }
+
     if (pkt->cacheResponding()) {
         DPRINTF(MemoryAccess, "Cache responding to %#llx: not responding\n",
                 pkt->getAddr());
@@ -459,9 +481,34 @@ AbstractMemory::access(PacketPtr pkt)
     } else if (pkt->isWrite()) {
         if (writeOK(pkt)) {
             if (pmemAddr) {
+
+                if(limconfig.getFuncop() != 0x00)
+                {
+                    limconfig.setPacket(pkt);
+                    int *host_addr_lim = (int *)toHostAddr((Addr)((*(int *)pkt->getConstPtr<uint>())));
+                    // pkt->setLimActivateSize(1);
+                    DPRINTF(LiMConfig, "gem5 space address %p\n", pkt->getAddr());
+                    DPRINTF(LiMConfig, "LiM config : address = %p, op = %x, size = %d\n", *(int *)host_addr, pkt->getLimFuncop(), pkt->getLimActivateSize());
+                    DPRINTF(LiMConfig, "data to hostaddress is %p\n", *host_addr_lim);
+                    DPRINTF(LiMConfig, "data is %p\n", (*(int *)pkt->getConstPtr<int>()));
+                }
+
                 pkt->writeData(host_addr);
                 DPRINTF(MemoryAccess, "%s write due to %s\n",
                         __func__, pkt->print());
+
+                // if(limconfig.getFuncop() != 0x00)
+                // {
+                //     DPRINTF(LiMConfig, "data is %p\n", (*(int *)pkt->getConstPtr<int>()));
+                //     DPRINTF(LiMConfig, "vector[0] is 0x%x\n", *(((int *)host_addr) + 0) );
+                //     DPRINTF(LiMConfig, "vector[1] is 0x%x\n", *(((int *)host_addr) + 1) );
+                //     DPRINTF(LiMConfig, "vector[2] is 0x%x\n", *(((int *)host_addr) + 2) );
+                //     DPRINTF(LiMConfig, "vector[3] is 0x%x\n", *(((int *)host_addr) + 3) );
+                //     DPRINTF(LiMConfig, "vector[4] is 0x%x\n", *(((int *)host_addr) + 4) );
+
+                //     // DPRINTF(LiMConfig, "flag is %d\n", flag );
+                // }
+
             }
             assert(!pkt->req->isInstFetch());
             TRACE_PACKET("Write");

@@ -127,6 +127,13 @@ class ExecContext
         panic("ExecContext::readMem() should be overridden\n");
     }
 
+    virtual Fault ActiveMem(uint8_t *data, uint16_t funcop, Addr addr,
+            Request::Flags flags)
+    {
+        panic("ExecContext::ActiveMem() should be overridden\n");
+    }
+
+
     /**
      * Initiate a timing memory read operation.  Must be overridden
      * for exec contexts that support timing memory mode.  Not pure

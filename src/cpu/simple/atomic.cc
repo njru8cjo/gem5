@@ -68,6 +68,7 @@ AtomicSimpleCPU::init()
     ifetch_req->setContext(cid);
     data_read_req->setContext(cid);
     data_write_req->setContext(cid);
+    data_active_req->setContext(cid);
     data_amo_req->setContext(cid);
 }
 
@@ -87,6 +88,7 @@ AtomicSimpleCPU::AtomicSimpleCPU(const BaseAtomicSimpleCPUParams &p)
     ifetch_req = std::make_shared<Request>();
     data_read_req = std::make_shared<Request>();
     data_write_req = std::make_shared<Request>();
+    data_active_req = std::make_shared<Request>();
     data_amo_req = std::make_shared<Request>();
 }
 
@@ -543,6 +545,40 @@ AtomicSimpleCPU::writeMem(uint8_t *data, unsigned size, Addr addr,
 
         curr_frag_id++;
     }
+}
+
+Fault
+AtomicSimpleCPU::ActiveMem(uint8_t *data, uint16_t funcop, Addr addr,
+                          Request::Flags flags)
+{
+    SimpleExecContext &t_info = *threadInfo[curThread];
+    SimpleThread *thread = t_info.thread;
+
+    const RequestPtr &req = data_active_req;
+
+    if (traceData)
+        traceData->setMem(addr, 1, flags);
+
+
+    req->taskId(taskId());
+    req->setPaddr(addr);
+
+    Fault fault = NoFault;
+
+    Packet pkt(req, Packet::makeWriteCmd(req));
+    pkt.dataStatic(data);
+    pkt.setLimFuncop(funcop);
+    pkt.setSize(1);
+
+    DPRINTF(SimpleCPU, "%s for addr:%#x %s\n",
+        __func__, pkt.getAddr(), pkt.cmdString());
+
+    dcache_latency += sendPacket(dcachePort, &pkt);
+
+    panic_if(pkt.isError(), "Data write (%s) failed: %s",
+            pkt.getAddrRange().to_string(), pkt.print());
+
+    return fault;
 }
 
 Fault
